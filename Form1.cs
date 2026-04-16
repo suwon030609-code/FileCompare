@@ -130,12 +130,94 @@ namespace FileCompare
 
         private void btnCopyFromLeft_Click(object sender, EventArgs e)
         {
+            if (string.IsNullOrWhiteSpace(txtLeftDir.Text) || string.IsNullOrWhiteSpace(txtRightDir.Text))
+            {
+                MessageBox.Show("먼저 양쪽 폴더를 선택하세요.");
+                return;
+            }
 
+            if (lvwLeftDir.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("복사할 파일을 왼쪽에서 선택하세요.");
+                return;
+            }
+
+            foreach (ListViewItem item in lvwLeftDir.SelectedItems)
+            {
+                string fileName = item.Text;
+
+                if (!leftFiles.ContainsKey(fileName))
+                    continue;
+
+                FileInfo src = leftFiles[fileName];
+                string destPath = Path.Combine(txtRightDir.Text, src.Name);
+
+                CopyFileWithConfirmation(src.FullName, destPath);
+            }
+
+            PopulateFileList(lvwLeftDir, txtLeftDir.Text, leftFiles);
+            PopulateFileList(lvwRightDir, txtRightDir.Text, rightFiles);
+            CompareAndColorize();
         }
 
         private void btnCopyFromRight_Click(object sender, EventArgs e)
         {
+            if (string.IsNullOrWhiteSpace(txtLeftDir.Text) || string.IsNullOrWhiteSpace(txtRightDir.Text))
+            {
+                MessageBox.Show("먼저 양쪽 폴더를 선택하세요.");
+                return;
+            }
 
+            if (lvwRightDir.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("복사할 파일을 오른쪽에서 선택하세요.");
+                return;
+            }
+
+            foreach (ListViewItem item in lvwRightDir.SelectedItems)
+            {
+                string fileName = item.Text;
+
+                if (!rightFiles.ContainsKey(fileName))
+                    continue;
+
+                FileInfo src = rightFiles[fileName];
+                string destPath = Path.Combine(txtLeftDir.Text, src.Name);
+
+                CopyFileWithConfirmation(src.FullName, destPath);
+            }
+
+            PopulateFileList(lvwLeftDir, txtLeftDir.Text, leftFiles);
+            PopulateFileList(lvwRightDir, txtRightDir.Text, rightFiles);
+            CompareAndColorize();
+        }
+        private void CopyFileWithConfirmation(string srcPath, string destPath)
+        {
+            FileInfo srcInfo = new FileInfo(srcPath);
+
+            if (File.Exists(destPath))
+            {
+                FileInfo destInfo = new FileInfo(destPath);
+
+                string message =
+                    $"대상 폴더에 동일한 이름의 파일이 이미 있습니다.\n" +
+                    $"덮어쓰시겠습니까?\n\n" +
+                    $"원본 파일 수정일: {srcInfo.LastWriteTime}\n" +
+                    $"대상 파일 수정일: {destInfo.LastWriteTime}\n\n" +
+                    $"원본: {srcPath}\n" +
+                    $"대상: {destPath}";
+
+                DialogResult result = MessageBox.Show(
+                    message,
+                    "덮어쓰기 확인",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result != DialogResult.Yes)
+                    return;
+            }
+
+            File.Copy(srcPath, destPath, true);
         }
     }
 }
